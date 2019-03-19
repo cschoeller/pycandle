@@ -4,30 +4,27 @@ import torch.nn.functional as F
 
 
 class AdaptiveConv2d(nn.Module):
-    """
+    r"""
     Adaptive convolutional layer, takes an additional input which forms the convolution kernel and then applies it
-    to the primary input. In this case the filter manifold network which generates the kernel is fixed
-    to a size of 3 layers which double in the number of output neurons until the final output dimension is
-    reached.
-    This layer type is based on:
-    "Incorporating Side Information by Adaptive Convolution", Kang et al., NIPS 2017
+    to the primary input.
 
-    The implementation with exploiting grouped convolutions is based on this answer on StackOverflow:
+    Literature:
+    "Incorporating Side Information by Adaptive Convolution", Kang et al., Conference on Neural Information Processing Systems (NeurIPS), 2017.
+
+    Implementation details:
     https://stackoverflow.com/questions/42068999/tensorflow-convolutions-with-different-filter-for-each-sample-in-the-mini-batch
-
-    Further relevant links to understand the implementation:
     https://discuss.pytorch.org/t/conv2d-certain-values-for-groups-and-out-channels-dont-work/14228
     https://github.com/pytorch/pytorch/issues/3653
 
     Additional Notes:
     Currently only supports same padding. 
 
-    Parameters:
-    channels_in - 2D input tensor
-    channels_out - 2D output tensor
-    features_in - 1D input tensor, the adaptive features
-    kernel_size - scalar or tuple, if tuple its assumed to be of quadratic shape, e.g. (3,3) and not (3,2)
-    manifold_network - defines number of neurons and layers of the internal filter manifold network
+    Args:
+        channels_in - 2D input tensor
+        channels_out - 2D output tensor
+        features_in - 1D input tensor, the adaptive features
+        kernel_size - scalar or tuple, if tuple its assumed to be of quadratic shape, e.g. (3,3) and not (3,2)
+        manifold_network - defines number of neurons and layers of the internal filter manifold network
 
     Example:
         >>> batch_size = 4
@@ -63,12 +60,15 @@ class AdaptiveConv2d(nn.Module):
             self.manifold_network.append(nn.Linear(in_features, out_features))
         self.manifold_network.append(nn.Linear(manifold_network_definition[-1], num_neurons_out))
 
-
     def forward(self, x, z):
-        """
-        Takes a tensor x and an auxillary input z. This is implemented as a hack, exploiting
+        r"""
+        Takes a tensor x and an auxillary input z. This is implemented for full batches by exploiting
         grouped convolutions to process a whole input batch at once while applying multiple convolutions
         (channels and kernels) to each batch-instance without a loop.
+
+        Parameters:
+            x - 2D input tensor
+            z - side information
         """
         # run filter manifold network to get convolution weights
         for layer in self.manifold_network:
@@ -93,3 +93,96 @@ class AdaptiveConv2d(nn.Module):
         x = F.relu(conv(x))
         x = x.view(-1, self.channels_out, x_h, x_w)
         return x
+
+
+class ConvGRU(nn.Module):
+    r""" 
+    Minimal Gated Recurrent Unit Layer. The GRU is a simpler and smaller recurrent layer than the LSTM but shows
+    competetive performance. This is a convolutional implementation.
+
+    Literature: "Learning Phrase Representations using RNN Encoder–Decoderfor Statistical Machine Translation", Cho et al., arXiv, 2014.
+
+    Args:
+        channels - number of input and output channels
+        kernel_size - kernel size, symmetric, either tuple or scalar
+    """
+
+    def __init__(self, channels, kernel_size):
+        super(ConvGRU, self).__init__()
+
+        # convert kernel tuple to scalar
+        if type(kernel_size) == tuple:
+            assert(len(kernel_size) == 2)
+            assert(kernel_size[0] == kernel_size[1])
+            kernel_size = kernel_size[0]
+            
+        self.channels = channels
+        self.kernel_size = kernel_size
+        self.same_padding = kernel_size // 2
+
+        self.update_gate_x = nn.Conv2d(self.channels, self.channels, self.kernel_size, padding=self.same_padding)
+        self.update_gate_h = nn.Conv2d(self.channels, self.channels, self.kernel_size, padding=self.same_padding)
+        self.reset_gate_x = nn.Conv2d(self.channels, self.channels, self.kernel_size, padding=self.same_padding)
+        self.reset_gate_h = nn.Conv2d(self.channels, self.channels, self.kernel_size, padding=self.same_padding)
+        self.out_gate_x = nn.Conv2d(self.channels, self.channels, self.kernel_size, padding=self.same_padding)
+        self.out_gate_h = nn.Conv2d(self.channels, self.channels, self.kernel_size, padding=self.same_padding)
+
+        # initialize biases with zeros, no initial forgetting
+        for module in self.modules():
+            if isinstance(module, nn.Conv2d):
+                module.bias.data.fill_(1.) #TODO correct initialization?
+
+    def forward(self, x, last_hidden_state=None):
+        if last_hidden_state is None: # initialize hidden state
+            last_hidden_state = torch.zeros_like(x) # automatically on cuda if x on cuda
+
+        r = torch.sigmoid(self.reset_gate_x(x) + self.reset_gate_h(last_hidden_state)) # reset gate
+        hidden_state_modification = torch.tanh(self.out_gate_x(x) + self.out_gate_h(r * last_hidden_state)) # state modification
+        z = torch.sigmoid(self.update_gate_x(x) + self.update_gate_h(last_hidden_state)) # update gate
+        new_hidden_state = z * last_hidden_state + (1. - z) * hidden_state_modification # apply update
+        return new_hidden_state
+
+
+class ConvMinGRU(nn.Module):
+    r""" 
+    Convolutional Minimal Gated Recurrent Unit Layer. The MinGRU is a simpler and smaller version of the GRU and shows equivalent
+    performance with fewer parameters. This is a convolutional implementation.
+
+    Literature: "Minimal Gated Unit for Recurrent Neural Networks", Zhou et al., International Journal of Automation and Computing, 2016.
+
+    Args:
+        channels - number of input and output channels
+        kernel_size - kernel size, symmetric, either tuple or scalar
+    """
+
+    def __init__(self, channels, kernel_size):
+        super(ConvMinGRU, self).__init__()
+
+        # convert kernel tuple to scalar
+        if type(kernel_size) == tuple:
+            assert(len(kernel_size) == 2)
+            assert(kernel_size[0] == kernel_size[1])
+            kernel_size = kernel_size[0]
+
+        self.channels = channels
+        self.kernel_size = kernel_size
+        self.same_padding = kernel_size // 2
+
+        self.forget_gate_x = nn.Conv2d(self.channels, self.channels, self.kernel_size, padding=self.same_padding)
+        self.forget_gate_h = nn.Conv2d(self.channels, self.channels, self.kernel_size, padding=self.same_padding)
+        self.out_gate_x = nn.Conv2d(self.channels, self.channels, self.kernel_size, padding=self.same_padding)
+        self.out_gate_h = nn.Conv2d(self.channels, self.channels, self.kernel_size, padding=self.same_padding)
+
+        # initialize biases with zeros, no initial forgetting
+        for module in self.modules():
+            if isinstance(module, nn.Conv2d):
+                module.bias.data.fill_(1.) #TODO correct initialization?
+    
+    def forward(self, x, last_hidden_state=None):
+        if last_hidden_state is None: # initialize hidden state
+            last_hidden_state = torch.zeros_like(x) # automatically on cuda if x on cuda
+
+        f = torch.sigmoid(self.forget_gate_x(x) + self.forget_gate_h(last_hidden_state))
+        hidden_state_changes = torch.tanh(self.out_gate_x(x) + self.out_gate_h(f * last_hidden_state))
+        new_hidden_state = f * last_hidden_state + (1. - f) * hidden_state_changes
+        return new_hidden_state
