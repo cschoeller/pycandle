@@ -4,8 +4,11 @@ import sys
 from time import time
 import datetime
 
-from .tee import Tee
-from .utils import *
+# from .tee import Tee
+# from .utils import *
+
+from tee import Tee
+from utils import *
 
 
 class Experiment:
