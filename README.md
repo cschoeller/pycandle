@@ -9,8 +9,8 @@ train_loader, val_loader = load_datasets(batch_size_train=64, batch_size_test=10
 experiment = Experiment('mnist_example')
 model = Net().cuda()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
-model_trainer = ModelTrainer(model=model, optimizer=optimizer, loss=F.nll_loss, epochs=20, train_data_loader=train_loader,
-                             val_data_loader=val_loader, gpu=0)
+model_trainer = ModelTrainer(model=model, optimizer=optimizer, loss=F.nll_loss, epochs=20, 
+                        train_data_loader=train_loader, val_data_loader=val_loader, gpu=0)
 model_trainer.start_training()
 ```
 
