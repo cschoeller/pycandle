@@ -3,7 +3,7 @@ import os.path as path
 from shutil import copyfile
 
 
-def copy_code(source_dir, dest_dir, exclude_dirs=['__pycache__', '.git', 'experiments'], exclude_files=['.pyc']):
+def copy_code(source_dir, dest_dir, exclude_dirs=[], exclude_files=[]):
     """
     Copies code from source_dir to dest_dir. Excludes specified folders and files by substring-matching.
 
@@ -22,7 +22,8 @@ def copy_code(source_dir, dest_dir, exclude_dirs=['__pycache__', '.git', 'experi
 
         # construct destination dir
         cropped_root = root[2:] if (root[:2] == './') else root
-        subdir_basename = path.basename(cropped_root)
+        subdir_basename = cropped_root
+        # subdir_basename = path.basename(cropped_root)
 
         # do not treat the root as a subdir
         if subdir_basename == source_basename:

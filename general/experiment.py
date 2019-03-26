@@ -4,8 +4,8 @@ import sys
 from time import time
 import datetime
 
-from tee import Tee
-from utils import *
+from .tee import Tee
+from .utils import *
 
 
 class Experiment:
@@ -24,11 +24,20 @@ class Experiment:
         >>> print(experiment.plots) # path to experiment plots
     """
 
-    def __init__(self, experiment_name, experiments_path=None):
+    def __init__(self, experiment_name, experiments_path=None, exclude_dirs=[], exclude_files=[]):
+
+
         self.experiments_path = self._set_experiments_dir(experiments_path)
         self.name = self._set_experiment_name(experiment_name)
         self.path = path.join(self.experiments_path, self.name) # path to current experiment
         self._sub_directories = ['plots', 'logs', 'code'] # default sub-directories
+
+        self._exclude_dirs = ['__pycache__', '.git', 'experiments']
+        self._exclude_dirs.extend(exclude_dirs)
+        self._exclude_files = ['.pyc']
+        self._exclude_files.extend(exclude_files)
+
+
         self._init_directories()
         self._tee = Tee(path.join(self.logs, 'console_output.log'), 'w') # start to log console
         self._copy_sourcecode()
@@ -63,7 +72,7 @@ class Experiment:
         """ Copy code from execution directory in experiment code directory. """
         sources_path = os.path.dirname(sys.argv[0])
         sources_path = sources_path if sources_path != '' else './'
-        copy_code(sources_path, self.code, exclude_dirs=[path.basename(self.experiments_path), '.vscode', '.git'])
+        copy_code(sources_path, self.code, exclude_dirs=self._exclude_dirs, exclude_files=self._exclude_files )# exclude_dirs=[path.basename(self.experiments_path), '.vscode', '.git'])
 
     def add_directory(self, dir_name):
         """

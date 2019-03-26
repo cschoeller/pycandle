@@ -79,7 +79,7 @@ class ModelTrainer:
                 loss, model_output = self.loss(batch_x, batch_y, self.model)
             else:
                 model_output = self.model(batch_x)
-                loss = self.loss(model_output, batch_y, self.model)
+                loss = self.loss(model_output, batch_y)
             self.optimizer.zero_grad() # reset gradients
             loss.backward() # backpropagation
 
@@ -92,6 +92,7 @@ class ModelTrainer:
 
     def _compute_validation_set(self, running_metrics):
         running_val_loss = 0
+        self.model.eval()
         for (batch_x, batch_y) in self.val_data_loader:
             batch_x, batch_y = self._recursive_to_cuda(batch_x), self._recursive_to_cuda(batch_y) # move to GPU
             
@@ -99,10 +100,11 @@ class ModelTrainer:
                 val_loss, model_output = self.loss(batch_x, batch_y, self.model)
             else:
                 model_output = self.model(batch_x)
-                val_loss = self.loss(model_output, batch_y, self.model)
+                val_loss = self.loss(model_output, batch_y)
 
             running_val_loss += val_loss.item()
             self._compute_running_metrics(model_output, batch_y, running_metrics, prefix='val_')
+        self.model.train()
 
         # normalize metrics and add validation loss
         running_metrics['val_loss'] = running_val_loss
@@ -140,7 +142,7 @@ class ModelTrainer:
             callback.close()
 
     def _print_step_info(self, epoch, step, performance_measures):
-        output_message = "epoch {}   batch {}/{}".format(epoch, step, len(self.train_data_loader) - 1)
+        output_message = "epoch {}   batch {}/{}".format(epoch+1, step, len(self.train_data_loader) - 1)
         delim = "   "
         for metric_name in sorted(list(performance_measures.keys())):
             if metric_name == 'gradient_norm':
