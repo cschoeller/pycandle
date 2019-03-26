@@ -15,20 +15,20 @@ class Tee(object):
 
     def __init__(self, filename, mode):
         """ Open file and redirect system stdout. """
-        self.file = open(filename, mode)
-        self.stdout = sys.stdout
+        self._file = open(filename, mode)
+        self._stdout = sys.stdout
         sys.stdout = self
 
     def __del__(self):
         """ Reset streams to initial state on destruction. """
-        sys.stdout = self.stdout
-        self.file.close()
+        sys.stdout = self._stdout
+        self._file.close()
 
     def write(self, data):
         """ Write to file and stdout. Is called automatically. """
-        self.file.write(data)
-        self.stdout.write(data)
+        self._file.write(data)
+        self._stdout.write(data)
         
     def flush(self):
         """ Force a buffer flush. """
-        self.file.flush()
+        self._file.flush()

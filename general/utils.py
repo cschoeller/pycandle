@@ -6,6 +6,12 @@ from shutil import copyfile
 def copy_code(source_dir, dest_dir, exclude_dirs=['__pycache__', '.git', 'experiments'], exclude_files=['.pyc']):
     """
     Copies code from source_dir to dest_dir. Excludes specified folders and files by substring-matching.
+
+    Parameters:
+        source_dir - location of the code to copy
+        dest_dir - location where the code should be copied to
+        exclude_dirs - folders containing strings specified in this list will be ignored
+        exclude_files - files containing strings specified in this list will be ignored
     """
     source_basename = path.basename(source_dir)
     for root, dirs, files in os.walk(source_dir, topdown=True):
@@ -35,7 +41,7 @@ def copy_code(source_dir, dest_dir, exclude_dirs=['__pycache__', '.git', 'experi
 
 def retrieve_git_hash():
     """
-    Retrieves and returns the current gith hash.
+    Retrieves and returns the current gith hash if execution location is a git repo.
     """
     try:
         git_hash = subprocess.check_output(['git', 'rev-parse', 'HEAD']).strip()
@@ -45,6 +51,15 @@ def retrieve_git_hash():
     return False
 
 def save_run_params_in_file(folder_path, filename, run_config):
+    """
+    Receives a run_config class, retrieves all member variables and saves them
+    in a config file for logging purposes.
+
+    Parameters:
+        folder_path - output folder
+        filename - output filename
+        run_config - shallow class with parameter members
+    """
     with open(path.join(folder_path, "run_params.conf"), 'w') as run_param_file:
         for attr, value in sorted(run_config.__dict__.items()):
                 run_param_file.write(attr + ': ' +  str(value) + '\n')
