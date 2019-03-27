@@ -13,7 +13,7 @@ class AbstractCallback:
             epoch (int): current epoch number
             step (int): current batch number
             performance_measures (dict): losses and metrics based on a running average
-            context (ModelTrainer): reference to the caller, allows manipulations
+            context (ModelTrainer): reference to the calling ModelTrainer, allows to access members
         """
         raise NotImplementedError
 

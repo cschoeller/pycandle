@@ -60,7 +60,7 @@ class ModelTrainer:
 
     def start_training(self):
         self.model.train() # train mode
-        for epoch in range(self._epochs):
+        for epoch in range(1, self._epochs + 1):
             self._epoch_step(epoch)
         self._close_callbacks()
 
@@ -182,7 +182,7 @@ class ModelTrainer:
 
     def _print_step_info(self, epoch, step, performance_measures):
         """ Print running averages for loss and metrics during training. """
-        output_message = "epoch {}   batch {}/{}".format(epoch+1, step, len(self.train_data_loader) - 1)
+        output_message = "epoch {}   batch {}/{}".format(epoch, step, len(self.train_data_loader) - 1)
         delim = "   "
         for metric_name in sorted(list(performance_measures.keys())):
             if metric_name == 'gradient_norm':
