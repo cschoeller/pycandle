@@ -30,57 +30,67 @@ class ModelTrainer:
         self.val_data_loader = val_data_loader
         self.optimizer = optimizer
         self.loss = loss
-        self.epochs = epochs
-        self.metrics = []
-        self.callbacks = []
-        self.gpu = gpu
-        self.custom_model_eval = custom_model_eval
-        self.clip_grads = clip_grads
-        self.epoch_grad_history = []
+        self._epochs = epochs
+        self._metrics = []
+        self._callbacks = []
+        self._gpu = gpu
+        self._custom_model_eval = custom_model_eval
+        self._clip_grads = clip_grads
 
     def set_metrics(self, metrics):
-        """ Set metric functions which receive y_pred and y_true. """
-        self.metrics = metrics
+        """
+        Set metric functions that receive y_pred and y_true. Metrics are expected to return
+        a basic numeric type like float or int.
+        """
+        self._metrics = metrics
     
     def add_metric(self, metric):
-        self.metrics.append(metric)
+        self._metrics.append(metric)
 
     def set_callbacks(self, callbacks):
         """
-        Set callbacks, which must be callable functionals and receive
-        epoch, step, loss, context. Callbacks are called after each epoch.
+        Set callbacks that are callable functionals and receive epoch, step, loss, context.
+        Context is a pointer to the ModelTrainer instance. Callbacks are called after each
+        processed batch.
         """
-        self.callbacks = callbacks
+        self._callbacks = callbacks
 
     def add_callback(self, callback):
-        self.callbacks.append(callback)
+        self._callbacks.append(callback)
 
     def start_training(self):
-        self.model.train()
-        for epoch in range(self.epochs):
+        self.model.train() # train mode
+        for epoch in range(self._epochs):
             self._epoch_step(epoch)
         self._close_callbacks()
 
     def _epoch_step(self, epoch):
-        # epoch for training set.
+        """ Execute one training epoch. """
         running_batch_loss = 0
         running_metrics = defaultdict(float)
         
         for step, (batch_x, batch_y) in enumerate(self.train_data_loader):
             batch_x, batch_y = self._recursive_to_cuda(batch_x), self._recursive_to_cuda(batch_y) # move to GPU
+
+            # compute training batch
             loss, model_output, grad_norm = self._train_on_batch(batch_x, batch_y)
             running_batch_loss += loss.item()
+
+            # compute metrics
             self._compute_running_metrics(model_output, batch_y, running_metrics)
-            running_metrics['gradient_norm'] += grad_norm
+            running_metrics['gradient_norm'] += grad_norm # add grad norm to metrics
 
+            # evaluate validation set at end of epoch
             if self.val_data_loader and step == (len(self.train_data_loader) - 1):
-                self._compute_validation_set(running_metrics)
+                self._compute_validation_error(running_metrics)
 
+            # print current loss and metrics and provide it to callbacks
             performance_measures = self._construct_performance_dict(step, running_batch_loss, running_metrics)
             self._print_step_info(epoch, step, performance_measures)
             self._apply_callbacks(epoch, step, performance_measures)
 
     def _comp_gradients(self):
+            """ Compute the gradient norm for all model parameters. """
             grad_sum = 0
             for param in self.model.parameters():
                 if param.requires_grad and param.grad is not None:
@@ -90,73 +100,94 @@ class ModelTrainer:
 
     def _train_on_batch(self, batch_x, batch_y):
             """ Compute loss depending on settings, compute gradients and apply optimization step. """
-            if self.custom_model_eval: # e.g. used for sequences and other complex model evaluations
+            # evaluate loss
+            if self._custom_model_eval:
                 loss, model_output = self.loss(batch_x, batch_y, self.model)
             else:
                 model_output = self.model(batch_x)
                 loss = self.loss(model_output, batch_y)
+
             self.optimizer.zero_grad() # reset gradients
             loss.backward() # backpropagation
 
-            if self.clip_grads is not None: # gradient clipping requested
-                Grads.clip_grad_norm(self.model.parameters(), self.clip_grads)
+            # gradient clipping
+            if self._clip_grads is not None:
+                Grads.clip_grad_norm(self.model.parameters(), self._clip_grads)
+
             grad_norm = self._comp_gradients() # compute average gradient norm
 
-            self.optimizer.step() # apply gradients
+            self.optimizer.step() # apply optimization step
             return loss, model_output, grad_norm
 
-    def _compute_validation_set(self, running_metrics):
-        running_val_loss = 0
+    def _compute_validation_error(self, running_metrics):
+        """ Evaluate the model's validation error. """
+        val_loss = 0
+
         self.model.eval()
         for (batch_x, batch_y) in self.val_data_loader:
             batch_x, batch_y = self._recursive_to_cuda(batch_x), self._recursive_to_cuda(batch_y) # move to GPU
             
-            if self.custom_model_eval: # e.g. used for sequences and other complex model evaluations
+            # evaluate loss
+            if self._custom_model_eval: # e.g. used for sequences and other complex model evaluations
                 val_loss, model_output = self.loss(batch_x, batch_y, self.model)
             else:
                 model_output = self.model(batch_x)
                 val_loss = self.loss(model_output, batch_y)
 
-            running_val_loss += val_loss.item()
+            # compute running validation loss and metrics. add 'val_' prefix to all measures.
+            val_loss += val_loss.item()
             self._compute_running_metrics(model_output, batch_y, running_metrics, prefix='val_')
         self.model.train()
 
-        # normalize metrics and add validation loss
-        running_metrics['val_loss'] = running_val_loss
+        # add loss to metrics and normalize all validation measures
+        running_metrics['val_loss'] = val_loss
         for key, value in running_metrics.items():
             if not 'val_' in key:
                 continue
             running_metrics[key] = value / len(self.val_data_loader)
 
     def _compute_running_metrics(self, y_pred, y_true, running_metrics, prefix=''):
-        if not self.custom_model_eval: # user must handle detachment himself in custom case
-            y_pred = y_pred.detach().cpu()
-            y_true = y_true.detach().cpu()
+        """
+        Computes all metrics based on predictions and labels and adds them to metrics
+        dictionary. Allows to prepend a prefix to the metric names in the dictionary.
+        """
 
-        for metric in self.metrics:
+        # if not self._custom_model_eval: # user must handle detachment himself in custom case
+        #     y_pred = y_pred.detach().cpu()
+        #     y_true = y_true.detach().cpu()
+
+        # compute all metrics
+        for metric in self._metrics:
             running_metrics[prefix + metric.__name__] += metric(y_pred, y_true)
 
     def _construct_performance_dict(self, train_step, running_batch_loss, running_metrics):
-        """ Constructs a combined dictionary of losses and metrics for callbacks. """
+        """
+        Constructs a combined dictionary of losses and metrics for callbacks based on
+        the current running averages.
+        """
         performance_dict = defaultdict()
         for key, value in running_metrics.items():
+
             if not 'val_' in key:
                 performance_dict[key] = value / (train_step + 1.)
             else:
-                performance_dict[key] = value # validation metrics, already normalized.
+                performance_dict[key] = value # validation metrics, already normalized
 
         performance_dict['loss'] = running_batch_loss / (train_step + 1.)
         return performance_dict
 
     def _apply_callbacks(self, epoch, step, performance_measures):
-        for callback in self.callbacks:
+        """ Call all registered callbacks with current batch information. """
+        for callback in self._callbacks:
             callback(epoch, step, performance_measures, self)
 
     def _close_callbacks(self):
-        for callback in self.callbacks:
+        """ Signal callbacks training is finished. """
+        for callback in self._callbacks:
             callback.close()
 
     def _print_step_info(self, epoch, step, performance_measures):
+        """ Print running averages for loss and metrics during training. """
         output_message = "epoch {}   batch {}/{}".format(epoch+1, step, len(self.train_data_loader) - 1)
         delim = "   "
         for metric_name in sorted(list(performance_measures.keys())):
@@ -167,14 +198,17 @@ class ModelTrainer:
 
     def _recursive_to_cuda(self, tensors):
         """
-        Recursively iterates nested lists in depth-first order and transfers
-        all pytorch tensors to specified cuda device.
+        Recursively iterates nested lists in depth-first order and transfers all tensors
+        to specified cuda device.
+
+        Parameters:
+            tensors (list or Tensor): list of tensors or tensor tuples, can be nested
         """
-        if self.gpu is None: # keep on cpu
+        if self._gpu is None: # keep on cpu
             return tensors
 
         if type(tensors) != list: # not only for torch.Tensor
-            return tensors.to(device=self.gpu)
+            return tensors.to(device=self._gpu)
 
         for i in range(len(tensors)):
             tensors[i] = self._recursive_to_cuda(tensors[i])
