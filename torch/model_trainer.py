@@ -151,12 +151,6 @@ class ModelTrainer:
         Computes all metrics based on predictions and labels and adds them to metrics
         dictionary. Allows to prepend a prefix to the metric names in the dictionary.
         """
-
-        # if not self._custom_model_eval: # user must handle detachment himself in custom case
-        #     y_pred = y_pred.detach().cpu()
-        #     y_true = y_true.detach().cpu()
-
-        # compute all metrics
         for metric in self._metrics:
             running_metrics[prefix + metric.__name__] += metric(y_pred, y_true)
 
