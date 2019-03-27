@@ -16,8 +16,8 @@ class Experiment:
     to the outside as member variables. It also allows adding of more subfolders conveniently.
 
     Args:
-        experiment_name - name of the exerpiment to be created
-        experiments_path - location where all experiments will be stored, default is './experiments'
+        experiment_name (string): name of the exerpiment to be created
+        experiments_path (string): location where all experiments will be stored, default is './experiments'
 
     Example:
         >>> experiment = Experiment('mnist_classification')

@@ -7,6 +7,21 @@ class ModelTrainer:
     """
     This class handles the training of a pytorch model. It provides convenience
     functionality to add metrics and callbacks and is inspired by the keras API.
+
+    Args:
+        model (nn.Module): model to be trained
+        optimizer (optim.Optimizer): optimizer used for training, e.g. torch.optim.Adam
+        loss (function): loss function that either accepts (model_output, label) or (input, label, model) if custom_model_eval is true
+        epochs (int): epochs to train
+        train_data_loader (utils.data.DataLoader): training data
+        val_data_loader (utils.data.DataLoader, optional): validation data
+        custom_model_eval (boolean, optional): enables training mode where the model is evaluated in the loss function
+        gpu (int, optional): if not set training runs on cpu, otherwise an int is expected that determines the training gpu
+        clip_grads (float, optional): if set training gradients will be clipped at specified norm
+
+    Example:
+        >>> model_trainer = ModelTrainer(model, optimizer, F.nll_loss, num_epochs, train_loader, gpu=0)
+        >>> model_trainer.start_training()
     """
 
     def __init__(self, model, optimizer, loss, epochs, train_data_loader, val_data_loader=None, custom_model_eval=False, gpu=None, clip_grads=None):
@@ -19,7 +34,7 @@ class ModelTrainer:
         self.metrics = []
         self.callbacks = []
         self.gpu = gpu
-        self.custom_model_eval = custom_model_eval # pass batch_x instad model out to loss.
+        self.custom_model_eval = custom_model_eval
         self.clip_grads = clip_grads
         self.epoch_grad_history = []
 
@@ -83,9 +98,9 @@ class ModelTrainer:
             self.optimizer.zero_grad() # reset gradients
             loss.backward() # backpropagation
 
-            if self.clip_grads is not None: # Clip grads if requested
+            if self.clip_grads is not None: # gradient clipping requested
                 Grads.clip_grad_norm(self.model.parameters(), self.clip_grads)
-            grad_norm = self._comp_gradients() # Compute average grad
+            grad_norm = self._comp_gradients() # compute average gradient norm
 
             self.optimizer.step() # apply gradients
             return loss, model_output, grad_norm

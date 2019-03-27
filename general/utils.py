@@ -8,10 +8,10 @@ def copy_code(source_dir, dest_dir, exclude_dirs=[], exclude_files=[]):
     Copies code from source_dir to dest_dir. Excludes specified folders and files by substring-matching.
 
     Parameters:
-        source_dir - location of the code to copy
-        dest_dir - location where the code should be copied to
-        exclude_dirs - folders containing strings specified in this list will be ignored
-        exclude_files - files containing strings specified in this list will be ignored
+        source_dir (string): location of the code to copy
+        dest_dir (string): location where the code should be copied to
+        exclude_dirs (list of strings): folders containing strings specified in this list will be ignored
+        exclude_files (list of strings): files containing strings specified in this list will be ignored
     """
     source_basename = path.basename(source_dir)
     for root, dirs, files in os.walk(source_dir, topdown=True):

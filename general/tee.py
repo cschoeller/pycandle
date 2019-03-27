@@ -6,8 +6,8 @@ class Tee(object):
     output into specified file but it will still be displayed as console output.
 
     Args:
-        filename - name of the file write the stdout to
-        mode - should be either 'w' for write or 'a' for append (accepts all open() modes)
+        filename (string): name of the file write the stdout to
+        mode (string): should be either 'w' for write or 'a' for append (accepts all open() modes)
 
     Example:
         >>> tee = Tee('console_output.log', 'w')
