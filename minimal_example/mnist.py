@@ -14,6 +14,7 @@ from pycandle.torch.callbacks import HistoryRecorder
 
 
 class Net(nn.Module):
+    """ Model to be traind. """
     def __init__(self):
         super(Net, self).__init__()
         self.conv1 = nn.Conv2d(1, 16, kernel_size=3)
@@ -39,30 +40,36 @@ def load_datasets(batch_size_train, batch_size_test):
     val_loader = torch.utils.data.DataLoader(mnist_dataset_test, batch_size=batch_size_train, shuffle=True)
     return train_loader, val_loader
 
-def accuracy(y_pred, y_true):
+def accuracy(y_pred, batch):
     """ Prediction accuracy metric. """
+    y_true = batch[1]
     pred = y_pred.data.max(1, keepdim=True)[1]
     count_correct = pred.eq(y_true.data.view_as(pred)).sum()
     return count_correct.item() / y_pred.size(0)
 
-# training parameters
+def my_nll_loss(batch, model):
+    """ Example for a loss in case 'custom_model_eval' is activated. """
+    batch_x, batch_y = batch
+    output = model(batch_x)
+    return F.nll_loss(output, batch_y), output
+
 class RunConfig:
+    """ Training parameters. """
     epochs = 5
     learning_rate = 0.01
-run_config = RunConfig()
 
-# start training
+# core training code
 train_loader, val_loader = load_datasets(batch_size_train=64, batch_size_test=1000)
 experiment = Experiment('test_mnist', exclude_dirs=['mnist_data'])
 model = Net().cuda()
-optimizer = torch.optim.Adam(model.parameters(), lr=run_config.learning_rate)
-model_trainer = ModelTrainer(model=model, optimizer=optimizer, loss=F.nll_loss, epochs=run_config.epochs, train_data_loader=train_loader, val_data_loader=val_loader, gpu=0)
+optimizer = torch.optim.Adam(model.parameters(), lr=RunConfig.learning_rate)
+model_trainer = ModelTrainer(model=model, optimizer=optimizer, loss=F.nll_loss, epochs=RunConfig.epochs, train_data_loader=train_loader, val_data_loader=val_loader, gpu=0)
 model_trainer.set_metrics([accuracy])
 history_recorder = HistoryRecorder()
 model_trainer.add_callback(history_recorder)
 model_trainer.start_training()
 
-# create plots
+# plotting
 for key in history_recorder.history.keys():
     if 'val' in key:
         continue

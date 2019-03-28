@@ -69,15 +69,16 @@ class ModelTrainer:
         running_batch_loss = 0
         running_metrics = defaultdict(float)
         
-        for step, (batch_x, batch_y) in enumerate(self.train_data_loader):
-            batch_x, batch_y = self._recursive_to_cuda(batch_x), self._recursive_to_cuda(batch_y) # move to GPU
+        for step, batch in enumerate(self.train_data_loader):
+            # batch_x, batch_y = self._recursive_to_cuda(batch_x), self._recursive_to_cuda(batch_y) # move to GPU
+            batch = self._recursive_to_cuda(batch) # move to GPU
 
             # compute training batch
-            loss, model_output, grad_norm = self._train_on_batch(batch_x, batch_y)
+            loss, model_output, grad_norm = self._train_on_batch(batch)
             running_batch_loss += loss.item()
 
             # compute metrics
-            self._compute_running_metrics(model_output, batch_y, running_metrics)
+            self._compute_running_metrics(model_output, batch, running_metrics)
             running_metrics['gradient_norm'] += grad_norm # add grad norm to metrics
 
             # evaluate validation set at end of epoch
@@ -98,11 +99,12 @@ class ModelTrainer:
             grad_norm = torch.sqrt(grad_sum).item()
             return grad_norm
 
-    def _train_on_batch(self, batch_x, batch_y):
+    def _train_on_batch(self, batch):
             """ Compute loss depending on settings, compute gradients and apply optimization step. """
             # evaluate loss
+            batch_x, batch_y = batch
             if self._custom_model_eval:
-                loss, model_output = self.loss(batch_x, batch_y, self.model)
+                loss, model_output = self.loss(batch, self.model)
             else:
                 model_output = self.model(batch_x)
                 loss = self.loss(model_output, batch_y)
@@ -124,19 +126,21 @@ class ModelTrainer:
         val_loss = 0
 
         self.model.eval()
-        for (batch_x, batch_y) in self.val_data_loader:
-            batch_x, batch_y = self._recursive_to_cuda(batch_x), self._recursive_to_cuda(batch_y) # move to GPU
+        for batch in self.val_data_loader:
+            # batch_x, batch_y = self._recursive_to_cuda(batch_x), self._recursive_to_cuda(batch_y) # move to GPU
+            batch = self._recursive_to_cuda(batch)
             
             # evaluate loss
+            batch_x, batch_y = batch
             if self._custom_model_eval: # e.g. used for sequences and other complex model evaluations
-                val_loss, model_output = self.loss(batch_x, batch_y, self.model)
+                val_loss, model_output = self.loss(batch, self.model)
             else:
                 model_output = self.model(batch_x)
                 val_loss = self.loss(model_output, batch_y)
 
             # compute running validation loss and metrics. add 'val_' prefix to all measures.
             val_loss += val_loss.item()
-            self._compute_running_metrics(model_output, batch_y, running_metrics, prefix='val_')
+            self._compute_running_metrics(model_output, batch, running_metrics, prefix='val_')
         self.model.train()
 
         # add loss to metrics and normalize all validation measures
@@ -146,13 +150,13 @@ class ModelTrainer:
                 continue
             running_metrics[key] = value / len(self.val_data_loader)
 
-    def _compute_running_metrics(self, y_pred, y_true, running_metrics, prefix=''):
+    def _compute_running_metrics(self, y_pred, batch, running_metrics, prefix=''):
         """
-        Computes all metrics based on predictions and labels and adds them to metrics
+        Computes all metrics based on predictions and batches and adds them to the metrics
         dictionary. Allows to prepend a prefix to the metric names in the dictionary.
         """
         for metric in self._metrics:
-            running_metrics[prefix + metric.__name__] += metric(y_pred, y_true)
+            running_metrics[prefix + metric.__name__] += metric(y_pred, batch)
 
     def _construct_performance_dict(self, train_step, running_batch_loss, running_metrics):
         """
