@@ -16,8 +16,6 @@ class StepwiseLearningRateReduction(AbstractCallback):
         epoch_steps (int): number of epochs after which learning rate is reduced
         reduction_factor (float): multiplicative factor for learning rate reduction
         min_lr (float): lower bound for learning rate
-
-    TODO implementation works for all pytorch optimizers?
     """
 
     def __init__(self, epoch_steps, reduction_factor, min_lr=None):
@@ -47,8 +45,6 @@ class ScheduledLearningRateReduction(AbstractCallback):
         epoch_schedule (list of int): defines at which epoch the learning rate will be reduced
         reduction_factor (float): multiplicative factor for learning rate reduction
         min_lr (float): lower bound for learning rate
-
-    TODO implementation works for all pytorch optimizers?
     """
 
     def __init__(self, epoch_schedule, reduction_factor, min_lr=None):
