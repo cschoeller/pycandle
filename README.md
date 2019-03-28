@@ -1,6 +1,6 @@
 # PyCandle
 
-PyCandle is a lightweight library for pytorch to make running pytorch experiments easy, structured, repeatable and to avoid boilerplate code.
+PyCandle is a lightweight library for pytorch to make running experiments easy, structured, repeatable and to avoid boilerplate code. It maintains flexibilty and allows to train also more complex models like recurrent or generative neural networks conveniently.
 
 Here is how PyCandle is used:
 ```python
