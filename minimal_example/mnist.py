@@ -59,8 +59,8 @@ class RunConfig:
     learning_rate = 0.01
 
 # core training code
-train_loader, val_loader = load_datasets(batch_size_train=64, batch_size_test=1000)
 experiment = Experiment('test_mnist', exclude_dirs=['mnist_data'])
+train_loader, val_loader = load_datasets(batch_size_train=64, batch_size_test=1000)
 model = Net().cuda()
 optimizer = torch.optim.Adam(model.parameters(), lr=RunConfig.learning_rate)
 model_trainer = ModelTrainer(model=model, optimizer=optimizer, loss=F.nll_loss, epochs=RunConfig.epochs, train_data_loader=train_loader, val_data_loader=val_loader, gpu=0)
