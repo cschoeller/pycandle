@@ -10,7 +10,7 @@ import torch.optim as optim
 
 from pycandle.general.experiment import Experiment
 from pycandle.torch.model_trainer import ModelTrainer
-from pycandle.torch.callbacks import HistoryRecorder
+from pycandle.torch.callbacks import *
 
 
 class Net(nn.Module):
@@ -67,6 +67,7 @@ model_trainer = ModelTrainer(model=model, optimizer=optimizer, loss=F.nll_loss, 
 model_trainer.set_metrics([accuracy])
 history_recorder = HistoryRecorder()
 model_trainer.add_callback(history_recorder)
+model_trainer.add_callback(ModelCheckpoint(experiment.path))
 model_trainer.start_training()
 
 # plotting
