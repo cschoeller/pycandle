@@ -16,3 +16,14 @@ model_trainer.start_training()
 ```
 
 A complete example for training a model to classify hand-written MNIST digits can be found in [minimal_example/mnist.py](minimal_example/mnist.py).
+
+
+### Requirements
+
+We tested PyCandle with the dependency versions listed here. However, PyCandle can also work with newer versions if they are downward compatible.
+
+* Python 3.5.4
+* PyTorch 0.4.1
+* cudnn 7.0.5
+* torchvision 0.2.1 (for examples)
+* matplotlib 2.1.1 (for examples)
