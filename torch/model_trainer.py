@@ -156,7 +156,13 @@ class ModelTrainer:
         dictionary. Allows to prepend a prefix to the metric names in the dictionary.
         """
         for metric in self._metrics:
-            running_metrics[prefix + metric.__name__] += metric(y_pred, batch)
+            metric_result = metric(y_pred, batch)
+
+            # convert to float if metric returned tensor
+            if type(metric_result) == torch.Tensor:
+                metric_result = metric_result.item()
+            
+            running_metrics[prefix + metric.__name__] += metric_result
 
     def _construct_performance_dict(self, train_step, running_batch_loss, running_metrics):
         """

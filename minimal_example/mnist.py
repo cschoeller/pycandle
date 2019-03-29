@@ -44,8 +44,8 @@ def accuracy(y_pred, batch):
     """ Prediction accuracy metric. """
     y_true = batch[1]
     pred = y_pred.data.max(1, keepdim=True)[1]
-    count_correct = pred.eq(y_true.data.view_as(pred)).sum()
-    return count_correct.item() / y_pred.size(0)
+    count_correct = pred.eq(y_true.data.view_as(pred)).sum().double()
+    return count_correct / y_pred.size(0)
 
 def my_nll_loss(batch, model):
     """ Example for a loss in case 'custom_model_eval' is activated. """
