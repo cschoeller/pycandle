@@ -70,7 +70,6 @@ class ModelTrainer:
         running_metrics = defaultdict(float)
         
         for step, batch in enumerate(self.train_data_loader):
-            # batch_x, batch_y = self._recursive_to_cuda(batch_x), self._recursive_to_cuda(batch_y) # move to GPU
             batch = self._recursive_to_cuda(batch) # move to GPU
 
             # compute training batch
@@ -123,11 +122,10 @@ class ModelTrainer:
 
     def _compute_validation_error(self, running_metrics):
         """ Evaluate the model's validation error. """
-        val_loss = 0
+        running_val_loss = 0
 
         self.model.eval()
         for batch in self.val_data_loader:
-            # batch_x, batch_y = self._recursive_to_cuda(batch_x), self._recursive_to_cuda(batch_y) # move to GPU
             batch = self._recursive_to_cuda(batch)
             
             # evaluate loss
@@ -139,12 +137,12 @@ class ModelTrainer:
                 val_loss = self.loss(model_output, batch_y)
 
             # compute running validation loss and metrics. add 'val_' prefix to all measures.
-            val_loss += val_loss.item()
+            running_val_loss += val_loss.item()
             self._compute_running_metrics(model_output, batch, running_metrics, prefix='val_')
         self.model.train()
 
         # add loss to metrics and normalize all validation measures
-        running_metrics['val_loss'] = val_loss
+        running_metrics['val_loss'] = running_val_loss
         for key, value in running_metrics.items():
             if not 'val_' in key:
                 continue
