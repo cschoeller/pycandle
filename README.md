@@ -17,6 +17,9 @@ model_trainer.start_training()
 
 A complete example for training a model to classify hand-written MNIST digits can be found in [minimal_example/mnist.py](minimal_example/mnist.py).
 
+### Installation
+
+Using PyCandle is very simple: Clone the repository anywhere on your machine and then create symlink with `ln -s <path>` in your machine learning project that points to the pycandle folder. Then you can just include modules with `import pycandle.*`. This is also how we use it in our example.
 
 ### Requirements
 
