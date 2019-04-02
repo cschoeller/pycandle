@@ -9,8 +9,8 @@ import torch.nn.functional as F
 import torch.optim as optim
 
 from pycandle.general.experiment import Experiment
-from pycandle.torch.model_trainer import ModelTrainer
-from pycandle.torch.callbacks import *
+from pycandle.training.model_trainer import ModelTrainer
+from pycandle.training.callbacks import *
 
 
 class Net(nn.Module):
@@ -40,18 +40,12 @@ def load_datasets(batch_size_train, batch_size_test):
     val_loader = torch.utils.data.DataLoader(mnist_dataset_test, batch_size=batch_size_train, shuffle=True)
     return train_loader, val_loader
 
-def accuracy(y_pred, batch):
+def accuracy(y_pred, y_true):
     """ Prediction accuracy metric. """
-    y_true = batch[1]
     pred = y_pred.data.max(1, keepdim=True)[1]
     count_correct = pred.eq(y_true.data.view_as(pred)).sum().double()
     return count_correct / y_pred.size(0)
 
-def my_nll_loss(batch, model):
-    """ Example for a loss in case 'custom_model_eval' is activated. """
-    batch_x, batch_y = batch
-    output = model(batch_x)
-    return F.nll_loss(output, batch_y), output
 
 class RunConfig:
     """ Training parameters. """

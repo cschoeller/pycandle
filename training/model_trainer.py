@@ -154,7 +154,11 @@ class ModelTrainer:
         dictionary. Allows to prepend a prefix to the metric names in the dictionary.
         """
         for metric in self._metrics:
-            metric_result = metric(y_pred, batch)
+            if self._custom_model_eval:
+                metric_result = metric(y_pred, batch)
+            else:
+                batch_y = batch[1]
+                metric_result = metric(y_pred, batch_y)
 
             # convert to float if metric returned tensor
             if type(metric_result) == torch.Tensor:
