@@ -25,8 +25,6 @@ class Experiment:
     """
 
     def __init__(self, experiment_name, experiments_path=None, exclude_dirs=[], exclude_files=[]):
-
-
         self.experiments_path = self._set_experiments_dir(experiments_path)
         self.name = self._set_experiment_name(experiment_name)
         self.path = path.join(self.experiments_path, self.name) # path to current experiment
