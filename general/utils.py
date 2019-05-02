@@ -22,8 +22,7 @@ def copy_code(source_dir, dest_dir, exclude_dirs=[], exclude_files=[]):
 
         # construct destination dir
         cropped_root = root[2:] if (root[:2] == './') else root
-        subdir_basename = cropped_root
-        # subdir_basename = path.basename(cropped_root)
+        subdir_basename = path.basename(cropped_root)
 
         # do not treat the root as a subdir
         if subdir_basename == source_basename:
