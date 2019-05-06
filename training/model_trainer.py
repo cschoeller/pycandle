@@ -36,8 +36,7 @@ class ModelTrainer:
         self._gpu = gpu
         self._custom_model_eval = custom_model_eval
         self._clip_grads = clip_grads
-        #Used by EarlyStopping callback
-        self._stop_training = False
+        self._stop_training = False # used stop training externally
         
     def set_metrics(self, metrics):
         """
@@ -64,10 +63,10 @@ class ModelTrainer:
         self.model.train() # train mode
         for epoch in range(1, self._epochs + 1):
             self._epoch_step(epoch)
-            #Stop training can be set True by EarlyStopping callback
-            #which runs after each epoch
+
             if self._stop_training:
                 break
+        
         self._close_callbacks()
 
     def _epoch_step(self, epoch):
