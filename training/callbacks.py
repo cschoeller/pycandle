@@ -123,7 +123,6 @@ class ModelCheckpoint(AbstractCallback):
                     }, self.output_path)
         model.train()
 
-
 class LayerwiseGradientNorm(AbstractCallback):
     """ Collects the layer-wise gradient norms for each epoch. """
 
