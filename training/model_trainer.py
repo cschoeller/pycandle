@@ -24,7 +24,8 @@ class ModelTrainer:
         >>> model_trainer.start_training()
     """
 
-    def __init__(self, model, optimizer, loss, epochs, train_data_loader, val_data_loader=None, custom_model_eval=False, gpu=None, clip_grads=None):
+    def __init__(self, model, optimizer, loss, epochs, train_data_loader, val_data_loader=None, 
+                custom_model_eval=False, gpu=None, clip_grads=None, scheduler=None):
         self.model = model
         self.train_data_loader = train_data_loader
         self.val_data_loader = val_data_loader
@@ -36,6 +37,7 @@ class ModelTrainer:
         self._gpu = gpu
         self._custom_model_eval = custom_model_eval
         self._clip_grads = clip_grads
+        self.scheduler = scheduler
         self._stop_training = False # used stop training externally
         
     def set_metrics(self, metrics):
@@ -105,6 +107,10 @@ class ModelTrainer:
 
     def _train_on_batch(self, batch):
             """ Compute loss depending on settings, compute gradients and apply optimization step. """
+            # run lr scheduler
+            if self.scheduler is not None:
+                self.scheduler.step()
+
             # evaluate loss
             batch_x, batch_y = batch
             if self._custom_model_eval:
