@@ -21,12 +21,16 @@ A complete example for training a model to classify hand-written MNIST digits ca
 
 Using PyCandle is very simple: Clone the repository anywhere on your machine and then create symlink with `ln -s <path>` in your machine learning project that points to the pycandle folder. Then you can just include modules with `import pycandle.*`. This is also how we use it in our example.
 
+Alternatively, it is now possible to install PyCandle with pip:
+
+`pip3 install pycandle`
+
 ### Requirements
 
 We tested PyCandle with the dependency versions listed here. However, PyCandle can also work with newer versions if they are downward compatible.
 
-* Python 3.5.4
-* PyTorch 0.4.1
-* cudnn 7.0.5
-* torchvision 0.2.1 (for examples)
-* matplotlib 2.1.1 (for examples)
+* Python >= 3.5
+* PyTorch >= 1.2
+* numpy >= 1.16.4
+* torchvision >= 0.2.1 (for examples)
+* matplotlib >= 2.1.1 (for examples)
