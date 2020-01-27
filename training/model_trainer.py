@@ -1,6 +1,7 @@
 from collections import defaultdict
 import torch
 import torch.nn.utils.clip_grad as Grads
+from .utils import recursive_to_cuda
 
 
 class ModelTrainer:
@@ -15,8 +16,8 @@ class ModelTrainer:
         epochs (int): epochs to train
         train_data_loader (utils.data.DataLoader): training data
         val_data_loader (utils.data.DataLoader, optional): validation data
-        custom_model_eval (boolean, optional): enables training mode where the model is evaluated in the loss function
-        gpu (int, optional): if not set training runs on cpu, otherwise an int is expected that determines the training gpu
+        custom_model_eval (boolean, optional): enables training mode where the model is passed to the loss function and evaluated manually
+        device (int, optional): if not set training runs on cpu, otherwise an int is expected that determines the training gpu
         clip_grads (float, optional): if set training gradients will be clipped at specified norm
 
     Example:
@@ -25,7 +26,7 @@ class ModelTrainer:
     """
 
     def __init__(self, model, optimizer, loss, epochs, train_data_loader, val_data_loader=None, 
-                custom_model_eval=False, gpu=None, clip_grads=None, scheduler=None):
+                custom_model_eval=False, device=None, clip_grads=None, scheduler=None):
         self.model = model
         self.train_data_loader = train_data_loader
         self.val_data_loader = val_data_loader
@@ -34,7 +35,7 @@ class ModelTrainer:
         self._epochs = epochs
         self._metrics = []
         self._callbacks = []
-        self._gpu = gpu
+        self._device = device
         self._custom_model_eval = custom_model_eval
         self._clip_grads = clip_grads
         self.scheduler = scheduler
@@ -77,7 +78,7 @@ class ModelTrainer:
         running_metrics = defaultdict(float)
         
         for step, batch in enumerate(self.train_data_loader):
-            batch = self._recursive_to_cuda(batch) # move to GPU
+            batch = recursive_to_cuda(batch, self._device) # move to GPU
 
             # compute training batch
             loss, model_output, grad_norm = self._train_on_batch(batch)
@@ -137,7 +138,7 @@ class ModelTrainer:
 
         self.model.eval()
         for batch in self.val_data_loader:
-            batch = self._recursive_to_cuda(batch)
+            batch = recursive_to_cuda(batch, self._device)
             
             # evaluate loss
             batch_x, batch_y = batch
@@ -212,21 +213,3 @@ class ModelTrainer:
                 continue
             output_message += delim + "{}: {:.6f}".format(metric_name, performance_measures[metric_name])
         print(output_message)
-
-    def _recursive_to_cuda(self, tensors):
-        """
-        Recursively iterates nested lists in depth-first order and transfers all tensors
-        to specified cuda device.
-
-        Parameters:
-            tensors (list or Tensor): list of tensors or tensor tuples, can be nested
-        """
-        if self._gpu is None: # keep on cpu
-            return tensors
-
-        if type(tensors) != list: # not only for torch.Tensor
-            return tensors.to(device=self._gpu)
-
-        for i in range(len(tensors)):
-            tensors[i] = self._recursive_to_cuda(tensors[i])
-        return tensors

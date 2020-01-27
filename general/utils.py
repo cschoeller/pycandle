@@ -45,14 +45,14 @@ def retrieve_git_hash():
     """
     try:
         git_hash = subprocess.check_output(['git', 'rev-parse', 'HEAD']).strip()
-        return git_hash
+        return str(git_hash)[2:-1]
     except subprocess.CalledProcessError as e:
         print(e.output)
     return False
 
 def save_run_params_in_file(folder_path, filename, run_config):
     """
-    Receives a run_config class, retrieves all member variables and saves them
+    Receives a config class, fetches all member variables and saves them
     in a config file for logging purposes.
 
     Parameters:
