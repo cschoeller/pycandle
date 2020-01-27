@@ -5,12 +5,12 @@ def recursive_to_cuda(tensors, device):
     to specified cuda device.
 
     Parameters:
-        tensors (list or Tensor): tensor, or collection of tensors (list, tuple; can be nested)
+        tensors (list or Tensor): objects to move to specified device (can be nested)
     """
     if device is None: # keep on cpu
         return tensors
 
-    if type(tensors) not in (list, tuple): # not only for torch.Tensor
+    if type(tensors) != list: # not only for torch.Tensor
         return tensors.to(device=device)
 
     for i in range(len(tensors)):
