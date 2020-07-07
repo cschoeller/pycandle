@@ -113,10 +113,10 @@ class ModelTrainer:
                 self.scheduler.step()
 
             # evaluate loss
-            batch_x, batch_y = batch
             if self._custom_model_eval:
                 loss, model_output = self.loss(batch, self.model)
             else:
+                batch_x, batch_y = batch
                 model_output = self.model(batch_x)
                 loss = self.loss(model_output, batch_y)
 
