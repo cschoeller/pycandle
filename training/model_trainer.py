@@ -77,7 +77,7 @@ class ModelTrainer:
         running_batch_loss = 0
         running_metrics = defaultdict(float)
         
-        for step, batch in enumerate(self.train_data_loader):
+        for step, batch in enumerate(self.train_data_loader, 1):
             batch = recursive_to_cuda(batch, self._device) # move to GPU
 
             # compute training batch
@@ -89,7 +89,7 @@ class ModelTrainer:
             running_metrics['gradient_norm'] += grad_norm # add grad norm to metrics
 
             # evaluate validation set at end of epoch
-            if self.val_data_loader and step == (len(self.train_data_loader) - 1):
+            if self.val_data_loader and step == (len(self.train_data_loader)):
                 self._compute_validation_error(running_metrics)
 
             # print current loss and metrics and provide it to callbacks
@@ -206,7 +206,7 @@ class ModelTrainer:
 
     def _print_step_info(self, epoch, step, performance_measures):
         """ Print running averages for loss and metrics during training. """
-        output_message = "epoch {}   batch {}/{}".format(epoch, step, len(self.train_data_loader) - 1)
+        output_message = "epoch {}   batch {}/{}".format(epoch, step, len(self.train_data_loader))
         delim = "   "
         for metric_name in sorted(list(performance_measures.keys())):
             if metric_name == 'gradient_norm':
