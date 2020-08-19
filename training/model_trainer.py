@@ -97,7 +97,7 @@ class ModelTrainer:
             self._print_step_info(epoch, step, performance_measures)
             self._apply_callbacks(epoch, step, performance_measures)
 
-    def _comp_gradients(self):
+    def _comp_gradient_norm(self):
             """ Compute the gradient norm for all model parameters. """
             grad_sum = 0
             for param in self.model.parameters():
@@ -107,15 +107,15 @@ class ModelTrainer:
             return grad_norm
 
     def _train_on_batch(self, batch):
-            """ Compute loss depending on settings, compute gradients and apply optimization step. """
+            """ Compute loss, compute gradients and apply optimization step for given batch. """
             # run lr scheduler
             if self.scheduler is not None:
                 self.scheduler.step()
 
             # evaluate loss
-            if self._custom_model_eval:
+            if self._custom_model_eval: # custom evaluation
                 loss, model_output = self.loss(batch, self.model)
-            else:
+            else: # regular supervised learning
                 batch_x, batch_y = batch
                 model_output = self.model(batch_x)
                 loss = self.loss(model_output, batch_y)
@@ -127,7 +127,7 @@ class ModelTrainer:
             if self._clip_grads is not None:
                 Grads.clip_grad_norm(self.model.parameters(), self._clip_grads)
 
-            grad_norm = self._comp_gradients() # compute average gradient norm
+            grad_norm = self._comp_gradient_norm() # compute average gradient norm
 
             self.optimizer.step() # apply optimization step
             return loss, model_output, grad_norm
