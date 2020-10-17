@@ -81,7 +81,7 @@ class HistoryRecorder(AbstractCallback):
 
     def __call__(self, epoch, step, performance_measures, context):
 
-        if step != len(context.train_data_loader)-1: # only record at end of epoch
+        if step != len(context.train_data_loader): # only record at end of epoch
             return
 
         for key, value in performance_measures.items():
@@ -137,7 +137,7 @@ class LayerwiseGradientNorm(AbstractCallback):
         """
         self._store_batch_layer_grads(context.model)
 
-        if step == (len(context.train_data_loader)-1): # end of epoch
+        if step == len(context.train_data_loader): # end of epoch
             self._store_layer_grads()
             self._batch_layer_grads = dict()
 
@@ -185,7 +185,7 @@ class EarlyStopping(AbstractCallback):
 
     def __call__(self, epoch, step, performance_measures, context):
 
-        if step != len(context.train_data_loader)-1: # only continue at end of epoch
+        if step != len(context.train_data_loader): # only continue at end of epoch
             return
 
         if not self.monitor in performance_measures:
@@ -235,7 +235,7 @@ class ReduceLROnPlateau(AbstractCallback):
         if not self.monitor in performance_measures:
             return
 
-        if step != len(context.train_data_loader)-1: # only continue at end of epoch
+        if step != len(context.train_data_loader): # only continue at end of epoch
             return
 
         if self.cooldown_counter > 0: # in cooldown phase
