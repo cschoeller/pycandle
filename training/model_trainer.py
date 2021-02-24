@@ -136,7 +136,6 @@ class ModelTrainer:
         """ Evaluate the model's validation error. """
         running_val_loss = 0
 
-        self.model.eval()
         for batch in self.val_data_loader:
             batch = recursive_to_cuda(batch, self._device)
             
