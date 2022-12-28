@@ -1,3 +1,4 @@
+import torch
 
 def recursive_to_cuda(tensors, device):
     """
@@ -10,9 +11,17 @@ def recursive_to_cuda(tensors, device):
     if device is None: # keep on cpu
         return tensors
 
-    if type(tensors) != list: # not only for torch.Tensor
+    if type(tensors) == tuple:
+        tensors = list(tensors)
+
+    if type(tensors) == torch.Tensor:
         return tensors.to(device=device)
 
-    for i in range(len(tensors)):
-        tensors[i] = recursive_to_cuda(tensors[i], device)
+    if type(tensors) != list: # non-tensor and non-list type
+        return tensors
+
+    if type(tensors) == list:
+        for i in range(len(tensors)):
+            tensors[i] = recursive_to_cuda(tensors[i], device)
+
     return tensors
