@@ -30,9 +30,9 @@ class Experiment:
         self.path = path.join(self.experiments_path, self.name) # path to current experiment
         self._sub_directories = ['plots', 'logs', 'code'] # default sub-directories
 
-        self._exclude_dirs = ['__pycache__', '.git', 'experiments']
+        self._exclude_dirs = ['__pycache__', '.git', 'experiments', 'pycandle']
         self._exclude_dirs.extend(exclude_dirs)
-        self._exclude_files = ['.pyc']
+        self._exclude_files = ['.pyc', '.gitignore']
         self._exclude_files.extend(exclude_files)
 
 
