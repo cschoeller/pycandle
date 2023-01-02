@@ -8,7 +8,7 @@ from .tee import Tee
 from .utils import *
 
 
-ccopylass Experiment:
+class Experiment:
     """
     Generates a folder where all experiments will be stored an then a named experiment with current
     timestamp and provided name. Automatically starts logging the console output and creates a copy
@@ -27,11 +27,12 @@ ccopylass Experiment:
         >>> print(experiment.plots) # path to experiment plots
     """
 
-    def __init__(self, experiment_name, experiments_path=None, copy_code=False, exclude_dirs=[], exclude_files=[]:
+    def __init__(self, experiment_name, experiments_path=None, copy_code=False, exclude_dirs=[], exclude_files=[]):
         self.experiments_path = self._set_experiments_dir(experiments_path)
         self.name = self._set_experiment_name(experiment_name)
         self.path = path.join(self.experiments_path, self.name) # path to current experiment
-        self._sub_directories = ['plots', 'logs', 'code'] # default sub-directories
+        self._sub_directories = ['plots', 'logs'] # default sub-directories
+        self._sub_directories += ['code'] if copy_code else []
 
         self._exclude_dirs = ['__pycache__', '.git', 'experiments', 'pycandle']
         self._exclude_dirs.extend(exclude_dirs)
@@ -74,7 +75,7 @@ ccopylass Experiment:
         """ Copy code from execution directory in experiment code directory. """
         sources_path = os.path.dirname(sys.argv[0])
         sources_path = sources_path if sources_path != '' else './'
-        copy_code(sources_path, self.code, exclude_dirs=self._exclude_dirs, exclude_files=self._exclude_files )# exclude_dirs=[path.basename(self.experiments_path), '.vscode', '.git'])
+        copy_code(sources_path, self.code, exclude_dirs=self._exclude_dirs, exclude_files=self._exclude_files)
 
     def add_directory(self, dir_name):
         """

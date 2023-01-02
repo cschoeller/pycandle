@@ -205,10 +205,11 @@ class ModelTrainer:
 
     def _print_step_info(self, epoch, step, performance_measures):
         """ Print running averages for loss and metrics during training. """
-        output_message = "epoch {}   batch {}/{}".format(epoch, step, len(self.train_data_loader))
+        output_message = f"epoch {epoch}/{self._epochs}   batch {step}/{len(self.train_data_loader)}"
         delim = "   "
         for metric_name in sorted(list(performance_measures.keys())):
             if metric_name == 'gradient_norm':
                 continue
-            output_message += delim + "{}: {:.6f}".format(metric_name, performance_measures[metric_name])
+            #output_message += delim + "{}: {:.6f}".format(metric_name, performance_measures[metric_name])
+            output_message += delim + f"{metric_name}: {performance_measures[metric_name]:.6f}"
         print(output_message)
