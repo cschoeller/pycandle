@@ -8,7 +8,7 @@ from .tee import Tee
 from .utils import *
 
 
-class Experiment:
+ccopylass Experiment:
     """
     Generates a folder where all experiments will be stored an then a named experiment with current
     timestamp and provided name. Automatically starts logging the console output and creates a copy
@@ -18,13 +18,16 @@ class Experiment:
     Args:
         experiment_name (string): name of the exerpiment to be created
         experiments_path (string): location where all experiments will be stored, default is './experiments'
+        copy_code (bool): Indicates whether the code-base should be copied for reproducibility
+        exclude_dirs (list): Directories to exclude from copying
+        exclude_files (list): Files to exclude from copying
 
     Example:
         >>> experiment = Experiment('mnist_classification')
         >>> print(experiment.plots) # path to experiment plots
     """
 
-    def __init__(self, experiment_name, experiments_path=None, exclude_dirs=[], exclude_files=[]):
+    def __init__(self, experiment_name, experiments_path=None, copy_code=False, exclude_dirs=[], exclude_files=[]:
         self.experiments_path = self._set_experiments_dir(experiments_path)
         self.name = self._set_experiment_name(experiment_name)
         self.path = path.join(self.experiments_path, self.name) # path to current experiment
@@ -35,10 +38,11 @@ class Experiment:
         self._exclude_files = ['.pyc', '.gitignore']
         self._exclude_files.extend(exclude_files)
 
-
         self._init_directories()
         self._tee = Tee(path.join(self.logs, 'console_output.log'), 'w') # start to log console
-        self._copy_sourcecode()
+
+        if copy_code:
+            self._copy_sourcecode()
 
     def _set_experiments_dir(self, experiments_path):
         if experiments_path != None:
