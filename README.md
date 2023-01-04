@@ -11,7 +11,7 @@ model = Net().cuda()
 experiment = Experiment('mnist_example')
 train_loader = load_dataset(batch_size_train=64)
 optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
-model_trainer = ModelTrainer(model, optimizer, F.nll_loss, 20, train_loader, gpu=0)
+model_trainer = ModelTrainer(model, optimizer, F.nll_loss, 20, train_loader, device=0)
 model_trainer.start_training()
 ```
 
