@@ -96,19 +96,22 @@ class ModelCheckpoint(AbstractCallback):
     Args:
         output_path (string): path to directory where the checkpoint will be saved to
         model_name (string): name of the checkpoint file
+        target_metric (string): metric based on which checkpoints are generated
     """
 
-    def __init__(self, output_path, model_name='model_checkpoint.pt'):
+    def __init__(self, output_path, model_name='model_checkpoint.pt', target_metric='val_loss'):
         self.output_path = path.join(output_path, model_name)
-        self.best_val_score = sys.float_info.max
+        self.best_score = sys.float_info.max
+        self.target_metric = target_metric
 
     def __call__(self, epoch, step, performance_measures, context):
 
-        if not 'val_loss' in performance_measures:
+        if not self.target_metric in performance_measures:
+            print("Warning: ModelCheckpoint metric not found")
             return
 
-        if performance_measures['val_loss'] < self.best_val_score:
-            self.best_val_score = performance_measures['val_loss']
+        if performance_measures[self.target_metric] < self.best_score:
+            self.best_score = performance_measures[self.target_metric]
             self._save_checkpoint(context.model, context.optimizer, epoch)
 
     def _save_checkpoint(self, model, optimizer, epoch):
