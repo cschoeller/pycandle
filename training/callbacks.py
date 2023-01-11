@@ -96,20 +96,28 @@ class ModelCheckpoint(AbstractCallback):
     Args:
         output_path (string): path to directory where the checkpoint will be saved to
         model_name (string): name of the checkpoint file
+        target_metric (string): metric based on which checkpoints are generated
+        smallest (bool): indicates if smaller or bigger values are considered better
     """
 
-    def __init__(self, output_path, model_name='model_checkpoint.pt'):
+    def __init__(self, output_path, model_name='model_checkpoint.pt', target_metric='val_loss', smallest=True):
         self.output_path = path.join(output_path, model_name)
-        self.best_val_score = sys.float_info.max
+        self.target_metric = target_metric
+        self.best_score = sys.float_info.max if smallest else  sys.float_info.min
+        self.smallest = smallest
 
     def __call__(self, epoch, step, performance_measures, context):
-
-        if not 'val_loss' in performance_measures:
+        if not self.target_metric in performance_measures:
             return
 
-        if performance_measures['val_loss'] < self.best_val_score:
-            self.best_val_score = performance_measures['val_loss']
+        if self._compare_measures(performance_measures[self.target_metric], self.best_score):
+            self.best_score = performance_measures[self.target_metric]
             self._save_checkpoint(context.model, context.optimizer, epoch)
+
+    def _compare_measures(self, new_val, best_val):
+        if self.smallest:
+            return new_val < best_val
+        return new_val > best_val
 
     def _save_checkpoint(self, model, optimizer, epoch):
         print("Saving model at checkpoint.")
